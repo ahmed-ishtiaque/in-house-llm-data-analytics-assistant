@@ -19,31 +19,31 @@ The screenshots below show the working prototype using generic branding and anon
 
 The Streamlit interface provides a conversational entry point for analytical questions and exposes the local model/runtime status, session controls, and suggested analytical workflows.
 
-![In-House LLM main interface](docs/screenshots/01-main-interface.png.png)
+![In-House LLM main interface](docs/screenshots/01-main-interface.png)
 
 ### 2. Deterministic grouped analytics
 
 A natural-language request for the top programs by unique clients is interpreted by the LLM, while the aggregation and ranking are executed deterministically against the structured dataset. The result is presented as a table, visualization, downloadable output, and evidence-grounded explanation.
 
-![Deterministic analytics example](docs/screenshots/02-deterministic-analytics.png.png)
+![Deterministic analytics example](docs/screenshots/02-deterministic-analytics.png)
 
 ### 3. Calculated business metric
 
 The prototype can interpret a higher-level analytical question, execute the underlying metric calculation deterministically, rank the result, and provide a concise natural-language explanation. Program labels shown in the public demo are anonymized.
 
-![Calculated completion-rate metric](docs/screenshots/03-calculated-metric.png.png)
+![Calculated completion-rate metric](docs/screenshots/03-calculated-metric.png)
 
 ### 4. Semantic category discovery
 
 Category-search requests follow a different path from numerical analytics. Candidate categorical values are obtained deterministically from the structured data and semantic reasoning is then used to identify values related to the user's concept.
 
-![Semantic category search](docs/screenshots/04-category-search.png.png)
+![Semantic category search](docs/screenshots/04-category-search.png)
 
 ### 5. Semantic record retrieval
 
 For meaning-based record discovery, the user's question is represented as an embedding and compared against record-level vectors in ChromaDB. The most relevant records are retrieved and supplied as controlled context for the response rather than passing the complete dataset to the LLM.
 
-![Semantic record retrieval](docs/screenshots/05-semantic-retrieval.png.png)
+![Semantic record retrieval](docs/screenshots/05-semantic-retrieval.png)
 
 ---
 
