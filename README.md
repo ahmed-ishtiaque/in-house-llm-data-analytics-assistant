@@ -1,11 +1,19 @@
 # In-House LLM Data Analytics Assistant
 
-A local, privacy-focused AI analytics prototype that combines **Llama 3.1**, **Ollama**, **Python**, **Pandas**, **ChromaDB**, **vector embeddings**, **Altair**, and **Streamlit** to enable natural-language exploration of structured data.
+A **local, privacy-focused LLM analytics prototype** that converts natural-language business questions into deterministic data analysis, retrieval-augmented generation (RAG), semantic category discovery, visualizations, and evidence-grounded explanations.
 
-The system follows a core engineering principle: **use the LLM for language understanding, intent interpretation, semantic reasoning, and explanation—while deterministic analytical tools perform authoritative calculations.**
+Built with **Llama 3.1**, **Ollama**, **Python**, **Pandas**, **ChromaDB**, **Sentence Transformers**, **Altair**, and **Streamlit**.
 
 > **Repository type:** Technical showcase / portfolio project  
 > **Project status:** Active prototype
+
+## Architecture highlights
+
+**Local LLM** · **Intent Routing** · **Deterministic Analytics** · **RAG / Vector Retrieval** · **Semantic Category Discovery** · **Automated Visualization**
+
+The system uses Llama 3.1 as the natural-language intelligence layer while keeping authoritative analytical computation in deterministic tooling. Requests are routed across conversational, analytical, semantic-retrieval, and categorical-discovery workflows. For semantic questions, ChromaDB retrieves relevant records that are supplied to Llama as controlled context for grounded generation.
+
+**Core engineering principle:** use the LLM for language understanding, intent interpretation, semantic reasoning, and explanation—while deterministic analytical tools perform authoritative calculations.
 
 > **Source code notice:** This public repository documents the architecture, capabilities, engineering decisions, and demonstrated behavior of the project. The complete application source code, prompts, orchestration logic, analytical execution engine, and implementation-specific components are intentionally not published.
 
@@ -13,7 +21,7 @@ The system follows a core engineering principle: **use the LLM for language unde
 
 ## Application demo
 
-The screenshots below show the working prototype using generic branding and anonymized demonstration content. They are intended to demonstrate product behavior and system capabilities without exposing organizational data or implementation-specific source code.
+The screenshots below show the working prototype using generic branding and anonymized demonstration content. They demonstrate product behavior and system capabilities without exposing organizational data or implementation-specific source code.
 
 ### 1. Natural-language analytics interface
 
@@ -39,9 +47,9 @@ Category-search requests follow a different path from numerical analytics. Candi
 
 ![Semantic category search](docs/screenshots/04-category-search.png)
 
-### 5. Semantic record retrieval
+### 5. RAG-based semantic record retrieval
 
-For meaning-based record discovery, the user's question is represented as an embedding and compared against record-level vectors in ChromaDB. The most relevant records are retrieved and supplied as controlled context for the response rather than passing the complete dataset to the LLM.
+For meaning-based record discovery, the user's question is embedded and compared against record-level vectors in ChromaDB. The most relevant records are retrieved and inserted into the Llama context. Llama then generates a response constrained to the retrieved evidence rather than receiving the complete dataset.
 
 ![Semantic record retrieval](docs/screenshots/05-semantic-retrieval.png)
 
@@ -73,23 +81,22 @@ Demonstrated analytical patterns include:
 - Grouped aggregations
 - Average, minimum, and maximum calculations
 - Top / bottom N ranking
-- Conditional filtering
-- Conditional metrics
+- Conditional filtering and metrics
 - Percentages and ratios
 - Calculated metrics such as completion rates
 - Business-rule normalization for critical metric definitions
 
-### 3. Semantic search
+### 3. Retrieval-Augmented Generation (RAG)
 
-The system supports meaning-based retrieval of relevant records using **vector embeddings + ChromaDB**, rather than relying exclusively on exact keyword matching.
+The semantic-search path uses **vector embeddings + ChromaDB** to retrieve records by meaning rather than relying exclusively on exact keyword matching. Retrieved records are supplied as controlled context to Llama 3.1, which generates an answer grounded in that evidence.
 
 Example:
 
 > `Find client records related to housing stability.`
 
-### 4. Category search
+### 4. Semantic category discovery
 
-For categorical exploration, the system can extract distinct values from structured data and use semantic reasoning to identify categories related to the user's concept.
+For categorical exploration, the system extracts distinct values from structured data and uses semantic reasoning to identify categories related to the user's concept.
 
 Example:
 
@@ -97,15 +104,7 @@ Example:
 
 ### 5. Automated analytical presentation
 
-Depending on the question and route, results can be presented as:
-
-- Interactive tables
-- Dynamically generated visualizations
-- Natural-language analytical explanations
-- Retrieved semantic records
-- Matched categorical values
-- CSV exports
-- Persistent results within the active analysis session
+Depending on the question and route, results can be presented as interactive tables, dynamically generated visualizations, natural-language analytical explanations, retrieved semantic records, matched categorical values, CSV exports, and persistent results within the active analysis session.
 
 ---
 
@@ -115,7 +114,7 @@ The architecture deliberately separates the **data layer**, **deterministic comp
 
 The complete structured dataset is maintained in a Pandas DataFrame for deterministic analytics. A separate vectorized representation of record-level content is stored in ChromaDB for semantic retrieval.
 
-**The complete source dataset is not passed directly to Llama 3.1.** The model receives controlled context appropriate to the selected workflow—for example, schema information for analytical planning, retrieved records for semantic reasoning, candidate category values for matching, or calculated results for explanation.
+**The complete source dataset is not passed directly to Llama 3.1.** The model receives controlled context appropriate to the selected workflow—for example, schema information for analytical planning, retrieved records for RAG, candidate category values for matching, or calculated results for explanation.
 
 ```mermaid
 flowchart TD
@@ -137,7 +136,7 @@ flowchart TD
     UI --> ROUTER[Llama 3.1 Intent Router]
 
     ROUTER --> CHAT[Chat]
-    ROUTER --> SEM[Semantic Search]
+    ROUTER --> SEM[RAG / Semantic Search]
     ROUTER --> ANA[Analytics]
     ROUTER --> CAT[Category Search]
 
@@ -175,7 +174,7 @@ Source / Demo Data
       │
       ├──> Pandas DataFrame ──> deterministic analytics
       │
-      └──> embeddings ──> ChromaDB ──> semantic retrieval
+      └──> embeddings ──> ChromaDB ──> RAG / semantic retrieval
 
 The full source dataset is not passed directly to Llama 3.1.
 ```
@@ -183,7 +182,7 @@ The full source dataset is not passed directly to Llama 3.1.
 The LLM interacts with controlled representations of the data depending on the route:
 
 - **Analytics:** dataset schema/column metadata supports intent planning; deterministic tools execute the calculation; calculated results can then be supplied to the LLM for explanation.
-- **Semantic Search:** the user's question is embedded and compared with vectors in ChromaDB; only the most relevant retrieved records are exposed downstream.
+- **RAG / Semantic Search:** the user's question is embedded and compared with vectors in ChromaDB; the most relevant retrieved records are supplied to Llama as grounded context for generation.
 - **Category Search:** deterministic processing extracts candidate categorical values and the LLM performs semantic matching over those candidates.
 - **Chat:** general conversational interaction does not require access to the analytical dataset.
 
@@ -219,11 +218,11 @@ This separation provides the flexibility of conversational analytics while reduc
 
 ---
 
-## Semantic retrieval / RAG concept
+## Retrieval-Augmented Generation (RAG)
 
-The semantic-search path uses record-level vector retrieval.
+The semantic-search workflow implements a record-level RAG pipeline.
 
-### Indexing concept
+### Indexing
 
 ```text
 Structured records
@@ -237,7 +236,7 @@ Record vectors
 ChromaDB
 ```
 
-### Query concept
+### Retrieval and generation
 
 ```text
 User question
@@ -248,16 +247,14 @@ ChromaDB similarity search
       ↓
 Top-N relevant records
       ↓
-Augmented prompt / controlled context
+Controlled augmented context
       ↓
 Llama 3.1
       ↓
-Natural-language response
+Grounded natural-language response
 ```
 
-In RAG terms, ChromaDB performs the **retrieval** step by finding records whose embeddings are semantically closest to the query embedding. Those retrieved records augment the model context, and Llama generates a response grounded in that retrieved evidence.
-
-The complete vector store and source dataset are not supplied to the LLM for each semantic query.
+ChromaDB performs the retrieval step by identifying records whose vector representations are semantically relevant to the query. Those retrieved records are inserted into the model context, and Llama 3.1 generates the response using the retrieved evidence. The complete vector store and source dataset are not supplied to the LLM for each query.
 
 ---
 
@@ -284,7 +281,7 @@ What percentage of unique clients achieved their goals?
 What percentage of client records have GSP Status = Completed?
 ```
 
-### Semantic Search
+### RAG / Semantic Search
 
 ```text
 Find client records related to housing stability.
@@ -308,8 +305,8 @@ Find programs related to employment.
 | Local LLM | **Llama 3.1** | Natural-language understanding, intent routing, analytical planning, semantic reasoning, explanations |
 | Local model runtime | **Ollama** | Local model execution |
 | Analytics engine | **Pandas** | Deterministic filtering, aggregation, grouping, and metric calculation |
-| Vector database | **ChromaDB** | Vector storage and similarity retrieval |
-| Embeddings | **Sentence Transformers** | Vector representation of searchable text |
+| Vector database | **ChromaDB** | Vector storage and semantic similarity retrieval |
+| Embeddings | **Sentence Transformers** | Vector representation of searchable record content |
 | Application layer | **Streamlit** | Interactive natural-language analytics interface |
 | Visualization | **Altair** | Dynamic analytical visualizations |
 | Core language | **Python** | Application orchestration and analytical integration |
@@ -353,23 +350,6 @@ This architecture demonstrates how an organization can explore LLM-assisted anal
 
 ---
 
-## Demonstrated workflow
-
-At a high level, the prototype:
-
-1. Prepares structured demo data for deterministic analysis.
-2. Creates a separate vector representation for semantic retrieval.
-3. Accepts natural-language questions through an interactive UI.
-4. Uses an LLM-based intent layer to identify the appropriate analytical path.
-5. Routes requests across conversational, deterministic analytics, semantic-search, and category-search workflows.
-6. Uses controlled context rather than passing the complete source dataset directly to the LLM.
-7. Executes numerical calculations through deterministic analytical tooling.
-8. Produces user-facing tables, visualizations, explanations, semantic results, and downloadable analytical outputs.
-
-Implementation-specific prompts, functions, routing rules, validation logic, and source code are intentionally omitted from this public showcase.
-
----
-
 ## Engineering challenges addressed
 
 The prototype was designed around several practical problems that arise when applying LLMs to structured analytics:
@@ -382,6 +362,9 @@ Distinguishing concepts such as total records versus unique entities and applyin
 
 **Semantic vs. analytical questions**  
 Routing meaning-based retrieval separately from aggregation and metric calculations.
+
+**Grounded generation**  
+Retrieving semantically relevant records and constraining generated responses to that evidence rather than exposing the complete dataset to the model.
 
 **Dynamic result presentation**  
 Generating an appropriate table, visualization, explanation, or downloadable result based on the analytical output.
