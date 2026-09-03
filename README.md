@@ -1,69 +1,85 @@
 # In-House LLM Data Analytics Assistant
 
-A local, privacy-focused AI analytics application that combines **Llama 3.1**, **Ollama**, **Python**, **Pandas**, **ChromaDB**, **vector embeddings**, **Altair**, and **Streamlit** to let users explore structured data using natural language.
+A local, privacy-focused AI analytics prototype that combines **Llama 3.1**, **Ollama**, **Python**, **Pandas**, **ChromaDB**, **vector embeddings**, **Altair**, and **Streamlit** to enable natural-language exploration of structured data.
 
-The project is designed around a simple principle: **use the LLM for language understanding and reasoning, but use deterministic analytics tools for the calculations themselves.**
+The system follows a core engineering principle: **use the LLM for language understanding, intent interpretation, semantic reasoning, and explanation—while deterministic analytical tools perform authoritative calculations.**
 
-> **Project status:** Active prototype / portfolio project
+> **Repository type:** Technical showcase / portfolio project  
+> **Project status:** Active prototype
+
+> **Source code notice:** This public repository documents the architecture, capabilities, engineering decisions, and demonstrated behavior of the project. The complete application source code, prompts, orchestration logic, analytical execution engine, and implementation-specific components are intentionally not published.
 
 ---
 
-## Why this project
+## Project objective
 
-Traditional BI tools are excellent for predefined dashboards and metrics, but business users often want to ask ad-hoc questions in natural language. This project explores how a locally hosted LLM can sit on top of an analytical data layer and make that experience more conversational without relying on an external LLM API for every query.
+Traditional BI tools are effective for predefined dashboards and metrics, but business users frequently need to explore data through ad-hoc questions that were not anticipated when a dashboard was designed.
 
-The current demo uses a **synthetic dataset with 30,000 client records** so the project can be shared publicly without exposing confidential or production data.
+This project explores a hybrid analytical architecture in which a locally hosted LLM acts as a natural-language intelligence layer over deterministic analytics and semantic retrieval capabilities.
+
+The prototype was developed and tested against a **synthetic structured dataset containing 30,000 client records**, allowing the concept to be demonstrated without exposing confidential or production data.
 
 ---
 
 ## Core capabilities
 
-### 1. Conversational Chat
-General interaction with the assistant, including greetings, identity, capabilities, and other non-analytical questions.
+### 1. Conversational interaction
 
-### 2. Deterministic Analytics
-Natural-language analytical questions are translated into a structured analysis plan and executed against the full dataset with Pandas.
+Handles general conversational requests such as greetings, assistant identity, and capability questions.
 
-Supported analytical patterns include:
+### 2. Deterministic analytics
 
-- Total counts and distinct counts
+Natural-language analytical questions are interpreted by the LLM and translated into a controlled analytical plan. The actual computation is performed against the full structured dataset using Pandas rather than relying on the LLM to calculate metrics directly.
+
+Demonstrated analytical patterns include:
+
+- Total and distinct counts
 - Grouped aggregations
-- Averages, medians, minimums, and maximums
+- Average, minimum, and maximum calculations
 - Top / bottom N ranking
-- Multi-condition filtering
+- Conditional filtering
 - Conditional metrics
 - Percentages and ratios
 - Calculated metrics such as completion rates
-- Business-rule validation for critical metric definitions
+- Business-rule normalization for critical metric definitions
 
-### 3. Semantic Search
-Individual records can be retrieved by **meaning rather than exact keyword matching** using vector embeddings and ChromaDB.
+### 3. Semantic search
+
+The system supports meaning-based retrieval of relevant records using **vector embeddings + ChromaDB**, rather than relying exclusively on exact keyword matching.
 
 Example:
 
 > `Find client records related to housing stability.`
 
-### 4. Category Search
-The application can inspect distinct categorical values and use the LLM to identify values semantically related to a concept.
+### 4. Category search
+
+For categorical exploration, the system can extract distinct values from structured data and use semantic reasoning to identify categories related to the user's concept.
 
 Example:
 
 > `Find goals related to finding employment.`
 
-### 5. Automated Result Presentation
-Analytical results can automatically produce:
+### 5. Automated analytical presentation
+
+Depending on the question and route, results can be presented as:
 
 - Interactive tables
-- Horizontal bar charts
-- Natural-language explanations
+- Dynamically generated visualizations
+- Natural-language analytical explanations
+- Retrieved semantic records
+- Matched categorical values
 - CSV exports
-- Persistent conversation history within the active session
+- Persistent results within the active analysis session
 
 ---
 
-## Architecture
+## High-level architecture
 
-The architecture deliberately separates the **data layer** from the **LLM layer**. The complete structured dataset is loaded into Pandas for deterministic analytics, while a vectorized representation is stored in ChromaDB for semantic retrieval. The LLM does not receive the entire source dataset directly; it receives only the schema/metadata needed for planning, retrieved context when performing semantic search, or calculated results when generating explanations.
+The architecture deliberately separates the **data layer**, **deterministic computation layer**, and **LLM intelligence layer**.
+
+The complete structured dataset is maintained in a Pandas DataFrame for deterministic analytics. A separate vectorized representation of record-level content is stored in ChromaDB for semantic retrieval.
+
+**The complete source dataset is not passed directly to Llama 3.1.** The model receives controlled context appropriate to the selected workflow—for example, schema information for analytical planning, retrieved records for semantic reasoning, candidate category values for matching, or calculated results for explanation.
 
 ```mermaid
 flowchart TD
@@ -96,14 +112,13 @@ flowchart TD
 
     ANA --> PLAN[LLM Analytics Planner]
     DF -. Schema / metadata only .-> PLAN
-    PLAN --> JSON[Structured Analysis Plan]
-    JSON --> VALIDATE[Deterministic Validation]
-    VALIDATE --> EXEC[Pandas Execution]
+    PLAN --> CONTROL[Controlled Analysis Specification]
+    CONTROL --> EXEC[Pandas Execution]
     DF --> EXEC
     EXEC --> CALC[Exact Calculated Result]
     CALC --> LLM
 
-    CAT --> CATPLAN[LLM Category Planner]
+    CAT --> CATPLAN[Category Intent Interpretation]
     DF -. Column schema .-> CATPLAN
     CATPLAN --> DISTINCT[Pandas: Distinct Category Values]
     DF --> DISTINCT
@@ -129,38 +144,80 @@ The full source dataset is not passed directly to Llama 3.1.
 
 The LLM interacts with controlled representations of the data depending on the route:
 
-- **Analytics:** dataset schema/metadata → LLM planner; structured plan → Pandas; calculated result → LLM explanation.
-- **Semantic Search:** question embedding → ChromaDB; retrieved relevant records → LLM explanation.
-- **Category Search:** Pandas extracts distinct values; the LLM performs semantic matching over those candidate category values.
-- **Chat:** no dataset access is required for general conversational questions.
+- **Analytics:** schema/metadata supports intent planning; deterministic tools execute the calculation; calculated results can then be supplied to the LLM for explanation.
+- **Semantic Search:** the user's question is embedded and compared with vectors in ChromaDB; only the most relevant retrieved records are exposed downstream.
+- **Category Search:** deterministic processing extracts candidate categorical values and the LLM performs semantic matching over those candidates.
+- **Chat:** general conversational interaction does not require access to the analytical dataset.
 
 ---
 
-## Why the LLM does not perform the calculations directly
+## Hybrid LLM + deterministic analytics design
 
-LLMs are strong at interpreting language, understanding analytical intent, and explaining results, but they are probabilistic systems. Large-scale aggregation should therefore not depend on the model "mentally" calculating over thousands of rows.
+A central design decision was **not to treat the LLM as the calculation engine**.
 
-For analytical questions, this project separates responsibilities:
+LLMs are effective at interpreting natural language and analytical intent, but authoritative aggregation over thousands of records is better handled by deterministic analytical software.
+
+Conceptually, the analytics workflow is:
 
 ```text
 Natural-language question
         ↓
-Llama 3.1 interprets analytical intent
+LLM interprets analytical intent
         ↓
-Structured analysis plan
+Controlled analytical specification
         ↓
-Deterministic validation / business rules
+Validation / business-rule layer
         ↓
-Pandas executes the calculation
+Pandas executes against the full dataset
         ↓
-Llama 3.1 explains the calculated result
+Exact calculated result
+        ↓
+LLM generates a human-readable explanation
 ```
 
-This design reduces the risk of hallucinated numerical results while preserving the flexibility of natural-language interaction.
+This separation provides the flexibility of conversational analytics while reducing dependence on probabilistic numerical reasoning.
+
+> The public repository intentionally documents this workflow at the architectural level rather than publishing the complete planner prompts, validation rules, execution logic, or orchestration implementation.
 
 ---
 
-## Example questions
+## Semantic retrieval / RAG concept
+
+The semantic-search path uses record-level vector retrieval.
+
+### Indexing concept
+
+```text
+Structured records
+      ↓
+Text representation
+      ↓
+Embedding model
+      ↓
+Record vectors
+      ↓
+ChromaDB
+```
+
+### Query concept
+
+```text
+User question
+      ↓
+Question embedding
+      ↓
+ChromaDB similarity search
+      ↓
+Top-N relevant records
+      ↓
+Controlled context for downstream response
+```
+
+This prevents the entire vector store or source dataset from being supplied to the LLM for every semantic query.
+
+---
+
+## Example questions demonstrated
 
 ### Chat
 
@@ -177,7 +234,7 @@ What are the total and unique numbers of clients?
 How many unique clients are in each program?
 Show me the top 5 programs by unique clients.
 Show me the bottom 5 programs by unique clients.
-What is the average age of client by program?
+What is the average age of clients by program?
 Which program has the highest completion rate?
 What percentage of unique clients achieved their goals?
 What percentage of client records have GSP Status = Completed?
@@ -203,161 +260,145 @@ Find programs related to employment.
 
 ## Technology stack
 
-| Layer | Technology | Role |
+| Layer | Technology | Role in the prototype |
 |---|---|---|
-| Local LLM | **Llama 3.1** | Natural-language understanding, routing, planning, explanations |
-| Local model runtime | **Ollama** | Runs Llama locally and exposes a localhost API |
-| Analytics engine | **Pandas** | Deterministic filtering, aggregation, grouping, metrics |
-| Vector database | **ChromaDB** | Stores and retrieves embedded records |
-| Embeddings | **Sentence Transformers** | Converts text into vector representations |
-| Application | **Streamlit** | Interactive user interface and session experience |
-| Visualization | **Altair** | Automatically generated analytical charts |
-| Language | **Python** | Application, orchestration, analytics, and integration logic |
+| Local LLM | **Llama 3.1** | Natural-language understanding, intent routing, analytical planning, semantic reasoning, explanations |
+| Local model runtime | **Ollama** | Local model execution |
+| Analytics engine | **Pandas** | Deterministic filtering, aggregation, grouping, and metric calculation |
+| Vector database | **ChromaDB** | Vector storage and similarity retrieval |
+| Embeddings | **Sentence Transformers** | Vector representation of searchable text |
+| Application layer | **Streamlit** | Interactive natural-language analytics interface |
+| Visualization | **Altair** | Dynamic analytical visualizations |
+| Core language | **Python** | Application orchestration and analytical integration |
 
 ---
 
-## Analytical design
+## Reliability and analytical safeguards
 
-The analytics route uses an LLM-generated structured plan rather than asking the model to generate arbitrary Python code.
+The prototype incorporates controls intended to make LLM-assisted analytics more dependable. At a high level, these include:
 
-A simplified plan for:
+- Constraining analytical operations to supported patterns
+- Grounding analytical planning in the available dataset schema
+- Separating probabilistic intent interpretation from deterministic execution
+- Applying explicit business rules to critical metric definitions
+- Distinguishing total-record calculations from distinct-entity calculations
+- Validating analytical requests before execution
+- Calculating derived metrics from deterministic intermediate results
+- Restricting explanations to calculated or retrieved evidence
+- Handling ranking, sorting, and tied results explicitly
+- Avoiding unsupported conclusions about service effectiveness from descriptive metrics alone
 
-> `Show me the top 5 programs by completion rate.`
-
-looks conceptually like:
-
-```json
-{
-  "group_by": ["Program Name"],
-  "metrics": [
-    {
-      "column": "Completed Activities",
-      "aggregation": "sum",
-      "alias": "Completed Activities"
-    },
-    {
-      "column": "Total Activities",
-      "aggregation": "sum",
-      "alias": "Total Activities"
-    }
-  ],
-  "calculated_metrics": [
-    {
-      "name": "Completion Rate",
-      "operation": "divide",
-      "numerator": "Completed Activities",
-      "denominator": "Total Activities",
-      "multiply_by": 100
-    }
-  ],
-  "sort_by": "Completion Rate",
-  "sort_order": "descending",
-  "limit": 5
-}
-```
-
-Pandas executes the plan against the dataset and returns the exact result. The LLM receives the calculated output only for explanation.
-
----
-
-## Reliability safeguards implemented
-
-The prototype includes several controls designed to make LLM-assisted analytics more reliable:
-
-- Allowed analytical operations are explicitly constrained.
-- The planner can only use columns from the discovered dataset schema.
-- Critical client-count definitions are normalized before execution.
-- Distinct-client calculations use a designated client identifier.
-- Calculated metrics operate on previously computed metric aliases.
-- Conditional metrics are separated from global metrics.
-- Filters are normalized and validated before execution.
-- The explanation layer is instructed to use only the calculated result.
-- Explanations avoid unsupported claims about program effectiveness or service quality.
-- Tied highest / lowest results are preserved in explanations.
+Detailed prompts, validation logic, normalization rules, and execution code are intentionally retained in the private implementation.
 
 ---
 
 ## Local-first processing
 
-The current prototype runs the LLM locally through Ollama.
+The current prototype runs Llama 3.1 locally through Ollama rather than calling an externally hosted LLM for each inference request.
 
 ```text
-Streamlit application
-       ↓
-http://localhost:11434
-       ↓
-Ollama
-       ↓
+Application
+    ↓
+Local Ollama runtime
+    ↓
 Llama 3.1
 ```
 
-This means the application does not require an external hosted LLM API for inference in the current local-demo configuration.
+This architecture demonstrates how an organization can explore LLM-assisted analytics while maintaining greater control over the inference environment.
 
-> This repository is a technical prototype and does not represent a production security, privacy, governance, or deployment certification.
+> Local execution alone does not constitute a complete enterprise security, privacy, governance, or deployment framework. Those concerns require additional controls in a production implementation.
 
 ---
 
-## Current demo workflow
+## Demonstrated workflow
 
-1. Load the structured demo dataset into Pandas for deterministic analytics.
-2. Build an automatic schema description from the DataFrame for analytical planning.
-3. Independently pre-index record text as embeddings in ChromaDB for semantic retrieval.
-4. Accept a natural-language question through Streamlit.
-5. Route the question to Chat, Analytics, Semantic Search, or Category Search.
-6. Execute the appropriate workflow without passing the complete source dataset directly to the LLM.
-7. Provide the LLM only the controlled context required by the selected route, such as schema metadata, retrieved records, distinct category candidates, or calculated results.
-8. Return a table, visualization, explanation, retrieved context, or categorical result.
-9. Allow analytical tables to be exported to CSV.
+At a high level, the prototype:
+
+1. Prepares structured demo data for deterministic analysis.
+2. Creates a separate vector representation for semantic retrieval.
+3. Accepts natural-language questions through an interactive UI.
+4. Uses an LLM-based intent layer to identify the appropriate analytical path.
+5. Routes requests across conversational, deterministic analytics, semantic-search, and category-search workflows.
+6. Uses controlled context rather than passing the complete source dataset directly to the LLM.
+7. Executes numerical calculations through deterministic analytical tooling.
+8. Produces user-facing tables, visualizations, explanations, semantic results, and downloadable analytical outputs.
+
+Implementation-specific prompts, functions, routing rules, validation logic, and source code are intentionally omitted from this public showcase.
+
+---
+
+## Engineering challenges addressed
+
+The prototype was designed around several practical problems that arise when applying LLMs to structured analytics:
+
+**LLM numerical reliability**  
+Separating natural-language interpretation from authoritative numerical execution.
+
+**Analytical ambiguity**  
+Distinguishing concepts such as total records versus unique entities and applying deterministic business definitions before execution.
+
+**Semantic vs. analytical questions**  
+Routing meaning-based retrieval separately from aggregation and metric calculations.
+
+**Dynamic result presentation**  
+Generating an appropriate table, visualization, explanation, or downloadable result based on the analytical output.
+
+**Data exposure control**  
+Avoiding unnecessary transmission of the complete structured dataset into the model context.
 
 ---
 
 ## Planned enhancements
 
-The prototype is intentionally iterative. Future enhancements include:
+Areas being explored for future iterations include:
 
-- Dynamic CSV / Excel upload
-- Automatic indexing of newly uploaded datasets
-- Multi-dataset selection and metadata management
-- Smarter categorical-value normalization and synonym matching
-- PDF / Word document ingestion and RAG
-- Image / chart analysis using a vision-capable local model
-- More advanced diagnostic and statistical analysis
-- Test suite for analytical-plan validation
-- Modularization of the current application into production-oriented services
+- Dynamic CSV / Excel ingestion
+- Automatic semantic indexing of newly supplied datasets
+- Multi-dataset metadata and routing
+- More advanced categorical normalization and semantic matching
+- Document-oriented RAG for PDF / Word content
+- Vision-capable analysis for images and charts
+- Expanded diagnostic and statistical analytics
+- Automated validation and regression testing for analytical plans
+- More modular service-oriented application architecture
 - Authentication, authorization, audit logging, and enterprise governance controls
 
 ---
 
-## Repository structure
+## Public repository scope
 
-The public repository is being populated progressively. The target structure is:
+This repository is intentionally maintained as a **technical portfolio showcase rather than a reproducible open-source distribution**.
 
-```text
-in-house-llm-data-analytics-assistant/
-│
-├── README.md
-├── app.py
-├── requirements.txt
-├── .gitignore
-├── LICENSE
-│
-├── data/
-│   └── sample_clients.csv
-│
-├── scripts/
-│   ├── generate_dataset.py
-│   └── load_to_chroma.py
-│
-└── docs/
-    ├── architecture.png
-    └── demo-screenshots/
-```
+Public materials may include:
+
+- Architecture documentation
+- Technical design explanations
+- Technology choices
+- Feature demonstrations
+- Selected screenshots
+- Example questions and outputs
+- High-level pseudocode or conceptual workflows where appropriate
+
+The following are intentionally excluded:
+
+- Complete application source code
+- Production or organizational datasets
+- Complete synthetic development datasets
+- Vector database contents
+- Detailed LLM system/planner prompts
+- Full analytical execution and normalization logic
+- Internal configuration and local environment details
+- Credentials, secrets, tokens, or connection information
+
+The goal is to demonstrate **system-design capability, AI/analytics engineering decisions, and working product behavior without publishing a step-by-step implementation that reproduces the complete application.**
 
 ---
 
-## Public-repository note
+## Source code availability
 
-The portfolio version of this project is intended to use **synthetic or otherwise shareable demo data only**. Production organizational data, credentials, local database files, vector stores containing confidential records, and proprietary assets should not be committed to this repository.
+The complete implementation is maintained privately.
+
+This public repository documents the project's architecture and demonstrated capabilities for professional portfolio and technical discussion purposes. Selected implementation excerpts may be shared separately when appropriate, but the repository is intentionally not designed as an installation or reproduction guide.
 
 ---
 
@@ -372,4 +413,4 @@ GitHub: [@ahmed-ishtiaque](https://github.com/ahmed-ishtiaque)
 
 ## Disclaimer
 
-This project is an independently developed technical prototype for learning, demonstration, and portfolio purposes. The public repository uses generic **In-House LLM** terminology and is designed to avoid exposing confidential organizational information.
+This project is an independently developed technical prototype for learning, demonstration, and portfolio purposes. Public materials use generic **In-House LLM** terminology and are intended to avoid exposing confidential organizational information or proprietary implementation details.
