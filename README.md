@@ -63,12 +63,21 @@ Analytical results can automatically produce:
 
 ## Architecture
 
+The architecture deliberately separates the **data layer** from the **LLM layer**. The complete structured dataset is loaded into Pandas for deterministic analytics, while a vectorized representation is stored in ChromaDB for semantic retrieval. The LLM does not receive the entire source dataset directly; it receives only the schema/metadata needed for planning, retrieved context when performing semantic search, or calculated results when generating explanations.
+
 ```mermaid
 flowchart TD
     DATA[Organizational / Demo Data]
-    DATA --> DF[Pandas DataFrame]
-    DATA --> EMB[Embeddings]
-    EMB --> CHROMA[ChromaDB]
+
+    subgraph DL[Data Layer]
+        DF[Pandas DataFrame]
+        EMB[Record Embeddings]
+        CHROMA[ChromaDB Vector Store]
+        EMB --> CHROMA
+    end
+
+    DATA --> DF
+    DATA --> EMB
 
     USER[User asks a natural-language question] --> UI[Streamlit UI]
     UI --> ROUTER[Llama 3.1 Intent Router]
@@ -82,23 +91,48 @@ flowchart TD
 
     SEM --> QEMB[Question Embedding]
     QEMB --> CHROMA
-    CHROMA --> LLM
+    CHROMA --> CONTEXT[Retrieved Relevant Records]
+    CONTEXT --> LLM
 
     ANA --> PLAN[LLM Analytics Planner]
+    DF -. Schema / metadata only .-> PLAN
     PLAN --> JSON[Structured Analysis Plan]
     JSON --> VALIDATE[Deterministic Validation]
-    VALIDATE --> DF
-    DF --> CALC[Exact Calculations & Metrics]
+    VALIDATE --> EXEC[Pandas Execution]
+    DF --> EXEC
+    EXEC --> CALC[Exact Calculated Result]
     CALC --> LLM
 
     CAT --> CATPLAN[LLM Category Planner]
-    CATPLAN --> DF
-    DF --> DISTINCT[Distinct Category Values]
+    DF -. Column schema .-> CATPLAN
+    CATPLAN --> DISTINCT[Pandas: Distinct Category Values]
+    DF --> DISTINCT
     DISTINCT --> MATCH[LLM Semantic Matching]
     MATCH --> LLM
 
-    LLM --> OUTPUT[Table • Visualization • AI Explanation • CSV Export]
+    LLM --> OUTPUT[Answer / Explanation]
+    EXEC --> PRESENT[Table • Visualization • CSV Export]
+    OUTPUT --> PRESENT
 ```
+
+### Data-access principle
+
+```text
+Source / Demo Data
+      │
+      ├──> Pandas DataFrame ──> deterministic analytics
+      │
+      └──> embeddings ──> ChromaDB ──> semantic retrieval
+
+The full source dataset is not passed directly to Llama 3.1.
+```
+
+The LLM interacts with controlled representations of the data depending on the route:
+
+- **Analytics:** dataset schema/metadata → LLM planner; structured plan → Pandas; calculated result → LLM explanation.
+- **Semantic Search:** question embedding → ChromaDB; retrieved relevant records → LLM explanation.
+- **Category Search:** Pandas extracts distinct values; the LLM performs semantic matching over those candidate category values.
+- **Chat:** no dataset access is required for general conversational questions.
 
 ---
 
@@ -265,14 +299,15 @@ This means the application does not require an external hosted LLM API for infer
 
 ## Current demo workflow
 
-1. Load the structured demo dataset into Pandas.
-2. Build an automatic schema description from the DataFrame.
-3. Pre-index record text as embeddings in ChromaDB for semantic retrieval.
+1. Load the structured demo dataset into Pandas for deterministic analytics.
+2. Build an automatic schema description from the DataFrame for analytical planning.
+3. Independently pre-index record text as embeddings in ChromaDB for semantic retrieval.
 4. Accept a natural-language question through Streamlit.
 5. Route the question to Chat, Analytics, Semantic Search, or Category Search.
-6. Execute the appropriate workflow.
-7. Return a table, visualization, explanation, retrieved context, or categorical result.
-8. Allow analytical tables to be exported to CSV.
+6. Execute the appropriate workflow without passing the complete source dataset directly to the LLM.
+7. Provide the LLM only the controlled context required by the selected route, such as schema metadata, retrieved records, distinct category candidates, or calculated results.
+8. Return a table, visualization, explanation, retrieved context, or categorical result.
+9. Allow analytical tables to be exported to CSV.
 
 ---
 
